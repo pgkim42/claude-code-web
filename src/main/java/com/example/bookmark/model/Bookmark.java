@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "bookmarks")
@@ -30,6 +32,33 @@ public class Bookmark {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    // Many-to-Many relationship with Tags
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "bookmark_tags",
+            joinColumns = @JoinColumn(name = "bookmark_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
+
+    // Favorites and Rating
+    @Column(name = "is_favorite", nullable = false)
+    private Boolean isFavorite = false;
+
+    @Column(name = "rating")
+    private Integer rating; // 1-5 stars
+
+    // Visit tracking
+    @Column(name = "visit_count", nullable = false)
+    private Integer visitCount = 0;
+
+    @Column(name = "last_visited_at")
+    private LocalDateTime lastVisitedAt;
+
+    // Privacy
+    @Column(name = "is_public", nullable = false)
+    private Boolean isPublic = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -40,6 +69,9 @@ public class Bookmark {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (isFavorite == null) isFavorite = false;
+        if (isPublic == null) isPublic = true;
+        if (visitCount == null) visitCount = 0;
     }
 
     @PreUpdate
@@ -52,5 +84,26 @@ public class Bookmark {
         this.url = url;
         this.description = description;
         this.category = category;
+        this.isFavorite = false;
+        this.isPublic = true;
+        this.visitCount = 0;
+    }
+
+    // Helper method to record a visit
+    public void recordVisit() {
+        this.visitCount++;
+        this.lastVisitedAt = LocalDateTime.now();
+    }
+
+    // Helper method to add tags
+    public void addTag(Tag tag) {
+        this.tags.add(tag);
+        tag.getBookmarks().add(this);
+    }
+
+    // Helper method to remove tags
+    public void removeTag(Tag tag) {
+        this.tags.remove(tag);
+        tag.getBookmarks().remove(this);
     }
 }

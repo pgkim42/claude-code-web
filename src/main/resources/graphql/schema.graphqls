@@ -5,9 +5,33 @@ type Query {
     bookmarksByCategory(categoryId: ID!): [Bookmark!]!
     searchBookmarks(query: String!): [Bookmark!]!
 
+    # Advanced search with filters
+    advancedSearch(filter: BookmarkFilterInput!): [Bookmark!]!
+
+    # Favorites
+    favoriteBookmarks: [Bookmark!]!
+
+    # Tag-based queries
+    bookmarksByTag(tagName: String!): [Bookmark!]!
+
+    # Visit-based queries
+    mostVisitedBookmarks(limit: Int): [Bookmark!]!
+    recentlyVisitedBookmarks(limit: Int): [Bookmark!]!
+
+    # High-rated bookmarks
+    topRatedBookmarks(minRating: Int!): [Bookmark!]!
+
     # Category queries
     categories: [Category!]!
     category(id: ID!): Category
+
+    # Tag queries
+    tags: [Tag!]!
+    tag(id: ID!): Tag
+
+    # Statistics
+    bookmarkStatistics: BookmarkStatistics!
+    categoryStatistics: [CategoryStatistics!]!
 }
 
 type Mutation {
@@ -16,10 +40,22 @@ type Mutation {
     updateBookmark(id: ID!, input: UpdateBookmarkInput!): Bookmark!
     deleteBookmark(id: ID!): Boolean!
 
+    # Bookmark actions
+    recordVisit(id: ID!): Bookmark!
+    toggleFavorite(id: ID!): Bookmark!
+    setRating(id: ID!, rating: Int!): Bookmark!
+    addTagToBookmark(bookmarkId: ID!, tagId: ID!): Bookmark!
+    removeTagFromBookmark(bookmarkId: ID!, tagId: ID!): Bookmark!
+
     # Category mutations
     createCategory(input: CreateCategoryInput!): Category!
     updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
     deleteCategory(id: ID!): Boolean!
+
+    # Tag mutations
+    createTag(input: CreateTagInput!): Tag!
+    updateTag(id: ID!, input: UpdateTagInput!): Tag!
+    deleteTag(id: ID!): Boolean!
 }
 
 type Bookmark {
@@ -28,6 +64,12 @@ type Bookmark {
     url: String!
     description: String
     category: Category
+    tags: [Tag!]!
+    isFavorite: Boolean!
+    rating: Int
+    visitCount: Int!
+    lastVisitedAt: String
+    isPublic: Boolean!
     createdAt: String!
     updatedAt: String!
 }
@@ -39,11 +81,37 @@ type Category {
     bookmarks: [Bookmark!]!
 }
 
+type Tag {
+    id: ID!
+    name: String!
+    color: String
+    bookmarks: [Bookmark!]!
+}
+
+type BookmarkStatistics {
+    totalBookmarks: Int!
+    totalFavorites: Int!
+    totalVisits: Int!
+    averageRating: Float!
+    totalCategories: Int!
+    totalTags: Int!
+}
+
+type CategoryStatistics {
+    categoryId: ID!
+    categoryName: String!
+    bookmarkCount: Int!
+}
+
 input CreateBookmarkInput {
     title: String!
     url: String!
     description: String
     categoryId: ID
+    tagIds: [ID!]
+    isFavorite: Boolean
+    rating: Int
+    isPublic: Boolean
 }
 
 input UpdateBookmarkInput {
@@ -51,6 +119,10 @@ input UpdateBookmarkInput {
     url: String
     description: String
     categoryId: ID
+    tagIds: [ID!]
+    isFavorite: Boolean
+    rating: Int
+    isPublic: Boolean
 }
 
 input CreateCategoryInput {
@@ -61,4 +133,23 @@ input CreateCategoryInput {
 input UpdateCategoryInput {
     name: String
     description: String
+}
+
+input CreateTagInput {
+    name: String!
+    color: String
+}
+
+input UpdateTagInput {
+    name: String
+    color: String
+}
+
+input BookmarkFilterInput {
+    query: String
+    categoryId: ID
+    tagName: String
+    isFavorite: Boolean
+    minRating: Int
+    isPublic: Boolean
 }
