@@ -1,6 +1,7 @@
 type Query {
     # Bookmark queries
     bookmarks: [Bookmark!]!
+    bookmarksConnection(first: Int, after: String): BookmarkConnection!
     bookmark(id: ID!): Bookmark
     bookmarksByCategory(categoryId: ID!): [Bookmark!]!
     searchBookmarks(query: String!): [Bookmark!]!
@@ -186,4 +187,23 @@ input CreateBookmarkFromUrlInput {
     isFavorite: Boolean
     isPublic: Boolean
     fetchMetadata: Boolean
+}
+
+# Relay Cursor Connection types for pagination
+type BookmarkConnection {
+    edges: [BookmarkEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type BookmarkEdge {
+    node: Bookmark!
+    cursor: String!
+}
+
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
 }

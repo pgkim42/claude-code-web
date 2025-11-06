@@ -78,4 +78,8 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
            "GROUP BY c.id, c.name " +
            "ORDER BY c.name")
     List<com.example.bookmark.dto.CategoryStatistics> getCategoryStatistics();
+
+    // Cursor-based pagination
+    @Query("SELECT b FROM Bookmark b WHERE b.id > :afterId ORDER BY b.id ASC")
+    List<Bookmark> findByIdGreaterThanOrderByIdAsc(@Param("afterId") Long afterId, Pageable pageable);
 }
