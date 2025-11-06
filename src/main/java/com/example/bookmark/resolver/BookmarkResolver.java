@@ -3,6 +3,7 @@ package com.example.bookmark.resolver;
 import com.example.bookmark.dto.BookmarkFilter;
 import com.example.bookmark.dto.BookmarkStatistics;
 import com.example.bookmark.dto.CategoryStatistics;
+import com.example.bookmark.dto.UrlMetadata;
 import com.example.bookmark.model.Bookmark;
 import com.example.bookmark.service.BookmarkService;
 import lombok.RequiredArgsConstructor;
@@ -150,6 +151,36 @@ public class BookmarkResolver {
     @MutationMapping
     public Bookmark removeTagFromBookmark(@Argument Long bookmarkId, @Argument Long tagId) {
         return bookmarkService.removeTagFromBookmark(bookmarkId, tagId);
+    }
+
+    // URL Metadata Operations
+
+    @QueryMapping
+    public UrlMetadata fetchUrlMetadata(@Argument String url) {
+        return bookmarkService.fetchUrlMetadata(url);
+    }
+
+    @MutationMapping
+    public Bookmark createBookmarkFromUrl(@Argument Map<String, Object> input) {
+        String url = (String) input.get("url");
+        Long categoryId = input.get("categoryId") != null ?
+                Long.parseLong(input.get("categoryId").toString()) : null;
+        List<Long> tagIds = input.get("tagIds") != null ?
+                ((List<?>) input.get("tagIds")).stream()
+                        .map(id -> Long.parseLong(id.toString()))
+                        .toList() : null;
+        Boolean isFavorite = (Boolean) input.get("isFavorite");
+        Boolean isPublic = (Boolean) input.get("isPublic");
+        Boolean fetchMetadata = input.get("fetchMetadata") != null ?
+                (Boolean) input.get("fetchMetadata") : true; // Default to true
+
+        return bookmarkService.createBookmarkFromUrl(url, categoryId, tagIds,
+                isFavorite, isPublic, fetchMetadata);
+    }
+
+    @MutationMapping
+    public Bookmark refreshMetadata(@Argument Long id) {
+        return bookmarkService.refreshMetadata(id);
     }
 
     // Helper method

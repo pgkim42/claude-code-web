@@ -59,6 +59,25 @@ public class Bookmark {
     @Column(name = "is_public", nullable = false)
     private Boolean isPublic = true;
 
+    // URL Metadata (auto-fetched)
+    @Column(name = "thumbnail_url", length = 1000)
+    private String thumbnailUrl; // Open Graph image or preview image
+
+    @Column(name = "favicon_url", length = 1000)
+    private String faviconUrl; // Website favicon
+
+    @Column(name = "site_name")
+    private String siteName; // e.g., "GitHub", "Medium"
+
+    @Column(name = "author")
+    private String author; // Article author if available
+
+    @Column(name = "published_date")
+    private LocalDateTime publishedDate; // Article publish date if available
+
+    @Column(name = "metadata_fetched", nullable = false)
+    private Boolean metadataFetched = false; // Whether metadata was auto-fetched
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -72,6 +91,7 @@ public class Bookmark {
         if (isFavorite == null) isFavorite = false;
         if (isPublic == null) isPublic = true;
         if (visitCount == null) visitCount = 0;
+        if (metadataFetched == null) metadataFetched = false;
     }
 
     @PreUpdate
@@ -87,6 +107,7 @@ public class Bookmark {
         this.isFavorite = false;
         this.isPublic = true;
         this.visitCount = 0;
+        this.metadataFetched = false;
     }
 
     // Helper method to record a visit

@@ -32,6 +32,9 @@ type Query {
     # Statistics
     bookmarkStatistics: BookmarkStatistics!
     categoryStatistics: [CategoryStatistics!]!
+
+    # URL Metadata
+    fetchUrlMetadata(url: String!): UrlMetadata!
 }
 
 type Mutation {
@@ -39,6 +42,10 @@ type Mutation {
     createBookmark(input: CreateBookmarkInput!): Bookmark!
     updateBookmark(id: ID!, input: UpdateBookmarkInput!): Bookmark!
     deleteBookmark(id: ID!): Boolean!
+
+    # Smart bookmark creation with auto-metadata fetch
+    createBookmarkFromUrl(input: CreateBookmarkFromUrlInput!): Bookmark!
+    refreshMetadata(id: ID!): Bookmark!
 
     # Bookmark actions
     recordVisit(id: ID!): Bookmark!
@@ -70,6 +77,13 @@ type Bookmark {
     visitCount: Int!
     lastVisitedAt: String
     isPublic: Boolean!
+    # URL Metadata fields
+    thumbnailUrl: String
+    faviconUrl: String
+    siteName: String
+    author: String
+    publishedDate: String
+    metadataFetched: Boolean!
     createdAt: String!
     updatedAt: String!
 }
@@ -152,4 +166,24 @@ input BookmarkFilterInput {
     isFavorite: Boolean
     minRating: Int
     isPublic: Boolean
+}
+
+type UrlMetadata {
+    title: String
+    description: String
+    thumbnailUrl: String
+    faviconUrl: String
+    siteName: String
+    author: String
+    publishedDate: String
+    url: String!
+}
+
+input CreateBookmarkFromUrlInput {
+    url: String!
+    categoryId: ID
+    tagIds: [ID!]
+    isFavorite: Boolean
+    isPublic: Boolean
+    fetchMetadata: Boolean
 }

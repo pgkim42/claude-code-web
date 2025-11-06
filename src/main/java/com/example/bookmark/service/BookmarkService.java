@@ -3,6 +3,7 @@ package com.example.bookmark.service;
 import com.example.bookmark.dto.BookmarkFilter;
 import com.example.bookmark.dto.BookmarkStatistics;
 import com.example.bookmark.dto.CategoryStatistics;
+import com.example.bookmark.dto.UrlMetadata;
 import com.example.bookmark.model.Bookmark;
 import com.example.bookmark.model.Category;
 import com.example.bookmark.model.Tag;
@@ -27,6 +28,7 @@ public class BookmarkService {
     private final BookmarkRepository bookmarkRepository;
     private final CategoryRepository categoryRepository;
     private final TagRepository tagRepository;
+    private final UrlMetadataService urlMetadataService;
 
     public List<Bookmark> getAllBookmarks() {
         return bookmarkRepository.findAll();
@@ -239,6 +241,100 @@ public class BookmarkService {
                         bookmarkRepository.countByCategory(category.getId())
                 ))
                 .collect(Collectors.toList());
+    }
+
+    // URL Metadata Operations
+
+    /**
+     * Fetch metadata from URL without creating a bookmark
+     */
+    public UrlMetadata fetchUrlMetadata(String url) {
+        return urlMetadataService.fetchMetadata(url);
+    }
+
+    /**
+     * Create bookmark from URL with auto-fetched metadata
+     */
+    @Transactional
+    public Bookmark createBookmarkFromUrl(String url, Long categoryId, List<Long> tagIds,
+                                          Boolean isFavorite, Boolean isPublic, Boolean fetchMetadata) {
+        Bookmark bookmark = new Bookmark();
+        bookmark.setUrl(url);
+
+        // Fetch metadata if requested
+        if (fetchMetadata != null && fetchMetadata) {
+            UrlMetadata metadata = urlMetadataService.fetchMetadata(url);
+
+            // Apply metadata to bookmark
+            if (metadata.getTitle() != null) {
+                bookmark.setTitle(metadata.getTitle());
+            } else {
+                bookmark.setTitle(url); // Fallback to URL
+            }
+
+            bookmark.setDescription(metadata.getDescription());
+            bookmark.setThumbnailUrl(metadata.getThumbnailUrl());
+            bookmark.setFaviconUrl(metadata.getFaviconUrl());
+            bookmark.setSiteName(metadata.getSiteName());
+            bookmark.setAuthor(metadata.getAuthor());
+            bookmark.setPublishedDate(metadata.getPublishedDate());
+            bookmark.setMetadataFetched(true);
+        } else {
+            // No metadata fetch - use URL as title
+            bookmark.setTitle(url);
+            bookmark.setMetadataFetched(false);
+        }
+
+        // Set category
+        if (categoryId != null) {
+            Category category = categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + categoryId));
+            bookmark.setCategory(category);
+        }
+
+        // Set tags
+        if (tagIds != null && !tagIds.isEmpty()) {
+            Set<Tag> tags = tagIds.stream()
+                    .map(tagId -> tagRepository.findById(tagId)
+                            .orElseThrow(() -> new RuntimeException("Tag not found with id: " + tagId)))
+                    .collect(Collectors.toSet());
+            bookmark.setTags(tags);
+        }
+
+        // Set optional fields
+        if (isFavorite != null) {
+            bookmark.setIsFavorite(isFavorite);
+        }
+        if (isPublic != null) {
+            bookmark.setIsPublic(isPublic);
+        }
+
+        return bookmarkRepository.save(bookmark);
+    }
+
+    /**
+     * Refresh metadata for an existing bookmark
+     */
+    @Transactional
+    public Bookmark refreshMetadata(Long id) {
+        Bookmark bookmark = bookmarkRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Bookmark not found with id: " + id));
+
+        UrlMetadata metadata = urlMetadataService.fetchMetadata(bookmark.getUrl());
+
+        // Update metadata fields
+        if (metadata.getTitle() != null) {
+            bookmark.setTitle(metadata.getTitle());
+        }
+        bookmark.setDescription(metadata.getDescription());
+        bookmark.setThumbnailUrl(metadata.getThumbnailUrl());
+        bookmark.setFaviconUrl(metadata.getFaviconUrl());
+        bookmark.setSiteName(metadata.getSiteName());
+        bookmark.setAuthor(metadata.getAuthor());
+        bookmark.setPublishedDate(metadata.getPublishedDate());
+        bookmark.setMetadataFetched(true);
+
+        return bookmarkRepository.save(bookmark);
     }
 
     // Helper methods
