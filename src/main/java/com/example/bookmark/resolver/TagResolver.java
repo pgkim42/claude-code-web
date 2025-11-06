@@ -11,6 +11,10 @@ import org.springframework.stereotype.Controller;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * GraphQL resolver for tag operations.
+ * Thin controller - delegates all logic to TagService.
+ */
 @Controller
 @RequiredArgsConstructor
 public class TagResolver {
@@ -19,13 +23,12 @@ public class TagResolver {
 
     @QueryMapping
     public List<Tag> tags() {
-        return tagService.getAllTags();
+        return tagService.findAll();
     }
 
     @QueryMapping
     public Tag tag(@Argument Long id) {
-        return tagService.getTagById(id)
-                .orElseThrow(() -> new RuntimeException("Tag not found with id: " + id));
+        return tagService.findById(id);
     }
 
     @MutationMapping
@@ -33,7 +36,7 @@ public class TagResolver {
         String name = (String) input.get("name");
         String color = (String) input.get("color");
 
-        return tagService.createTag(name, color);
+        return tagService.create(name, color);
     }
 
     @MutationMapping
@@ -41,11 +44,11 @@ public class TagResolver {
         String name = (String) input.get("name");
         String color = (String) input.get("color");
 
-        return tagService.updateTag(id, name, color);
+        return tagService.update(id, name, color);
     }
 
     @MutationMapping
     public Boolean deleteTag(@Argument Long id) {
-        return tagService.deleteTag(id);
+        return tagService.delete(id);
     }
 }

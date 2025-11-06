@@ -11,6 +11,10 @@ import org.springframework.stereotype.Controller;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * GraphQL resolver for category operations.
+ * Thin controller - delegates all logic to CategoryService.
+ */
 @Controller
 @RequiredArgsConstructor
 public class CategoryResolver {
@@ -19,13 +23,12 @@ public class CategoryResolver {
 
     @QueryMapping
     public List<Category> categories() {
-        return categoryService.getAllCategories();
+        return categoryService.findAll();
     }
 
     @QueryMapping
     public Category category(@Argument Long id) {
-        return categoryService.getCategoryById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+        return categoryService.findById(id);
     }
 
     @MutationMapping
@@ -33,7 +36,7 @@ public class CategoryResolver {
         String name = (String) input.get("name");
         String description = (String) input.get("description");
 
-        return categoryService.createCategory(name, description);
+        return categoryService.create(name, description);
     }
 
     @MutationMapping
@@ -41,11 +44,11 @@ public class CategoryResolver {
         String name = (String) input.get("name");
         String description = (String) input.get("description");
 
-        return categoryService.updateCategory(id, name, description);
+        return categoryService.update(id, name, description);
     }
 
     @MutationMapping
     public Boolean deleteCategory(@Argument Long id) {
-        return categoryService.deleteCategory(id);
+        return categoryService.delete(id);
     }
 }

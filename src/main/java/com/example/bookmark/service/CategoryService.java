@@ -1,51 +1,75 @@
 package com.example.bookmark.service;
 
+import com.example.bookmark.exception.DuplicateResourceException;
+import com.example.bookmark.exception.ResourceNotFoundException;
 import com.example.bookmark.model.Category;
 import com.example.bookmark.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
+/**
+ * Service for category operations.
+ *
+ * Simple enough to not require Query/Command separation.
+ * Uses custom exceptions for proper error handling.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
 
-    public List<Category> getAllCategories() {
+    public List<Category> findAll() {
+        log.debug("Finding all categories");
         return categoryRepository.findAll();
     }
 
-    public Optional<Category> getCategoryById(Long id) {
-        return categoryRepository.findById(id);
+    public Category findById(Long id) {
+        log.debug("Finding category by id: {}", id);
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> ResourceNotFoundException.category(id));
     }
 
-    public Optional<Category> getCategoryByName(String name) {
-        return categoryRepository.findByName(name);
+    public Category findByName(String name) {
+        log.debug("Finding category by name: {}", name);
+        return categoryRepository.findByName(name)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        com.example.bookmark.exception.ErrorCode.CATEGORY_NOT_FOUND,
+                        "Category not found with name: " + name
+                ));
     }
 
     @Transactional
-    public Category createCategory(String name, String description) {
+    public Category create(String name, String description) {
+        log.info("Creating category with name: {}", name);
+
         if (categoryRepository.findByName(name).isPresent()) {
-            throw new RuntimeException("Category already exists with name: " + name);
+            throw DuplicateResourceException.category(name);
         }
 
         Category category = new Category(name, description);
-        return categoryRepository.save(category);
+        Category saved = categoryRepository.save(category);
+
+        log.info("Created category with id: {}", saved.getId());
+        return saved;
     }
 
     @Transactional
-    public Category updateCategory(Long id, String name, String description) {
+    public Category update(Long id, String name, String description) {
+        log.info("Updating category id: {}", id);
+
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+                .orElseThrow(() -> ResourceNotFoundException.category(id));
 
         if (name != null) {
             if (categoryRepository.findByName(name).isPresent() && !category.getName().equals(name)) {
-                throw new RuntimeException("Category already exists with name: " + name);
+                throw DuplicateResourceException.category(name);
             }
             category.setName(name);
         }
@@ -53,15 +77,21 @@ public class CategoryService {
             category.setDescription(description);
         }
 
-        return categoryRepository.save(category);
+        Category updated = categoryRepository.save(category);
+        log.info("Updated category id: {}", id);
+        return updated;
     }
 
     @Transactional
-    public boolean deleteCategory(Long id) {
-        if (categoryRepository.existsById(id)) {
-            categoryRepository.deleteById(id);
-            return true;
+    public boolean delete(Long id) {
+        log.info("Deleting category id: {}", id);
+
+        if (!categoryRepository.existsById(id)) {
+            throw ResourceNotFoundException.category(id);
         }
-        return false;
+
+        categoryRepository.deleteById(id);
+        log.info("Deleted category id: {}", id);
+        return true;
     }
 }
