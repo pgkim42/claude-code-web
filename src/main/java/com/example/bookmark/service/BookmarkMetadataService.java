@@ -58,7 +58,7 @@ public class BookmarkMetadataService {
         bookmark.setUrl(url);
 
         // Fetch and apply metadata if requested
-        if (fetchMetadata != null && fetchMetadata) {
+        if (Boolean.TRUE.equals(fetchMetadata)) {
             UrlMetadata metadata = urlMetadataService.fetchMetadata(url);
             applyMetadata(bookmark, metadata);
         } else {

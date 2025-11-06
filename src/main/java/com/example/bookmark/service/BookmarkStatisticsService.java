@@ -57,17 +57,11 @@ public class BookmarkStatisticsService {
     }
 
     /**
-     * Get statistics per category
+     * Get statistics per category.
+     * Optimized to use single JPQL query instead of N+1 queries.
      */
     public List<CategoryStatistics> getCategoryStatistics() {
-        log.debug("Calculating category statistics");
-
-        return categoryRepository.findAll().stream()
-                .map(category -> new CategoryStatistics(
-                        category.getId(),
-                        category.getName(),
-                        bookmarkRepository.countByCategory(category.getId())
-                ))
-                .collect(Collectors.toList());
+        log.debug("Calculating category statistics (optimized)");
+        return bookmarkRepository.getCategoryStatistics();
     }
 }

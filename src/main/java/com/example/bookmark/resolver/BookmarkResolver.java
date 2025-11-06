@@ -1,9 +1,6 @@
 package com.example.bookmark.resolver;
 
-import com.example.bookmark.dto.BookmarkFilter;
-import com.example.bookmark.dto.BookmarkStatistics;
-import com.example.bookmark.dto.CategoryStatistics;
-import com.example.bookmark.dto.UrlMetadata;
+import com.example.bookmark.dto.*;
 import com.example.bookmark.model.Bookmark;
 import com.example.bookmark.service.BookmarkCommandService;
 import com.example.bookmark.service.BookmarkMetadataService;
@@ -16,7 +13,6 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * GraphQL resolver for bookmark operations.
@@ -60,9 +56,8 @@ public class BookmarkResolver {
     }
 
     @QueryMapping
-    public List<Bookmark> advancedSearch(@Argument Map<String, Object> filter) {
-        BookmarkFilter bookmarkFilter = mapToBookmarkFilter(filter);
-        return queryService.advancedSearch(bookmarkFilter);
+    public List<Bookmark> advancedSearch(@Argument BookmarkFilter filter) {
+        return queryService.advancedSearch(filter);
     }
 
     @QueryMapping
@@ -112,31 +107,31 @@ public class BookmarkResolver {
     // ========== Mutation Operations ==========
 
     @MutationMapping
-    public Bookmark createBookmark(@Argument Map<String, Object> input) {
+    public Bookmark createBookmark(@Argument CreateBookmarkInput input) {
         return commandService.create(
-                (String) input.get("title"),
-                (String) input.get("url"),
-                (String) input.get("description"),
-                parseLong(input.get("categoryId")),
-                parseLongList(input.get("tagIds")),
-                (Boolean) input.get("isFavorite"),
-                parseInteger(input.get("rating")),
-                (Boolean) input.get("isPublic")
+                input.getTitle(),
+                input.getUrl(),
+                input.getDescription(),
+                input.getCategoryId(),
+                input.getTagIds(),
+                input.getIsFavorite(),
+                input.getRating(),
+                input.getIsPublic()
         );
     }
 
     @MutationMapping
-    public Bookmark updateBookmark(@Argument Long id, @Argument Map<String, Object> input) {
+    public Bookmark updateBookmark(@Argument Long id, @Argument UpdateBookmarkInput input) {
         return commandService.update(
                 id,
-                (String) input.get("title"),
-                (String) input.get("url"),
-                (String) input.get("description"),
-                parseLong(input.get("categoryId")),
-                parseLongList(input.get("tagIds")),
-                (Boolean) input.get("isFavorite"),
-                parseInteger(input.get("rating")),
-                (Boolean) input.get("isPublic")
+                input.getTitle(),
+                input.getUrl(),
+                input.getDescription(),
+                input.getCategoryId(),
+                input.getTagIds(),
+                input.getIsFavorite(),
+                input.getRating(),
+                input.getIsPublic()
         );
     }
 
@@ -173,16 +168,15 @@ public class BookmarkResolver {
     // ========== Metadata Mutation Operations ==========
 
     @MutationMapping
-    public Bookmark createBookmarkFromUrl(@Argument Map<String, Object> input) {
-        Boolean fetchMetadata = input.get("fetchMetadata") != null ?
-                (Boolean) input.get("fetchMetadata") : true; // Default to true
+    public Bookmark createBookmarkFromUrl(@Argument CreateBookmarkFromUrlInput input) {
+        Boolean fetchMetadata = Boolean.TRUE.equals(input.getFetchMetadata()) || input.getFetchMetadata() == null;
 
         return metadataService.createFromUrl(
-                (String) input.get("url"),
-                parseLong(input.get("categoryId")),
-                parseLongList(input.get("tagIds")),
-                (Boolean) input.get("isFavorite"),
-                (Boolean) input.get("isPublic"),
+                input.getUrl(),
+                input.getCategoryId(),
+                input.getTagIds(),
+                input.getIsFavorite(),
+                input.getIsPublic(),
                 fetchMetadata
         );
     }
@@ -190,33 +184,5 @@ public class BookmarkResolver {
     @MutationMapping
     public Bookmark refreshMetadata(@Argument Long id) {
         return metadataService.refreshMetadata(id);
-    }
-
-    // ========== Helper Methods ==========
-
-    private BookmarkFilter mapToBookmarkFilter(Map<String, Object> filterMap) {
-        BookmarkFilter filter = new BookmarkFilter();
-        filter.setQuery((String) filterMap.get("query"));
-        filter.setCategoryId(parseLong(filterMap.get("categoryId")));
-        filter.setTagName((String) filterMap.get("tagName"));
-        filter.setIsFavorite((Boolean) filterMap.get("isFavorite"));
-        filter.setMinRating(parseInteger(filterMap.get("minRating")));
-        filter.setIsPublic((Boolean) filterMap.get("isPublic"));
-        return filter;
-    }
-
-    private Long parseLong(Object value) {
-        return value != null ? Long.parseLong(value.toString()) : null;
-    }
-
-    private Integer parseInteger(Object value) {
-        return value != null ? Integer.parseInt(value.toString()) : null;
-    }
-
-    private List<Long> parseLongList(Object value) {
-        if (value == null) return null;
-        return ((List<?>) value).stream()
-                .map(id -> Long.parseLong(id.toString()))
-                .toList();
     }
 }

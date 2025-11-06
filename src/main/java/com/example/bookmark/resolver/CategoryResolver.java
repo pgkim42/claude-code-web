@@ -1,5 +1,7 @@
 package com.example.bookmark.resolver;
 
+import com.example.bookmark.dto.CreateCategoryInput;
+import com.example.bookmark.dto.UpdateCategoryInput;
 import com.example.bookmark.model.Category;
 import com.example.bookmark.service.CategoryService;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +11,6 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * GraphQL resolver for category operations.
@@ -32,19 +33,13 @@ public class CategoryResolver {
     }
 
     @MutationMapping
-    public Category createCategory(@Argument Map<String, Object> input) {
-        String name = (String) input.get("name");
-        String description = (String) input.get("description");
-
-        return categoryService.create(name, description);
+    public Category createCategory(@Argument CreateCategoryInput input) {
+        return categoryService.create(input.getName(), input.getDescription());
     }
 
     @MutationMapping
-    public Category updateCategory(@Argument Long id, @Argument Map<String, Object> input) {
-        String name = (String) input.get("name");
-        String description = (String) input.get("description");
-
-        return categoryService.update(id, name, description);
+    public Category updateCategory(@Argument Long id, @Argument UpdateCategoryInput input) {
+        return categoryService.update(id, input.getName(), input.getDescription());
     }
 
     @MutationMapping

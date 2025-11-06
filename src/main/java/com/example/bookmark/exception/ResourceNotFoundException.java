@@ -30,4 +30,19 @@ public class ResourceNotFoundException extends BusinessException {
             String.format("Tag not found with id: %d", id)
         );
     }
+
+    // Name-based factory methods for consistency with DuplicateResourceException
+    public static ResourceNotFoundException categoryByName(String name) {
+        return new ResourceNotFoundException(
+            ErrorCode.CATEGORY_NOT_FOUND,
+            String.format("Category not found with name: %s", name)
+        );
+    }
+
+    public static ResourceNotFoundException tagByName(String name) {
+        return new ResourceNotFoundException(
+            ErrorCode.TAG_NOT_FOUND,
+            String.format("Tag not found with name: %s", name)
+        );
+    }
 }

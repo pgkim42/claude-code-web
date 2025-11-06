@@ -71,4 +71,11 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
     @Query("SELECT COALESCE(AVG(b.rating), 0.0) FROM Bookmark b WHERE b.rating IS NOT NULL")
     Double getAverageRating();
+
+    // Optimized category statistics - solves N+1 problem
+    @Query("SELECT new com.example.bookmark.dto.CategoryStatistics(c.id, c.name, COUNT(b.id)) " +
+           "FROM Category c LEFT JOIN c.bookmarks b " +
+           "GROUP BY c.id, c.name " +
+           "ORDER BY c.name")
+    List<com.example.bookmark.dto.CategoryStatistics> getCategoryStatistics();
 }

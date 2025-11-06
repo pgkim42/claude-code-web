@@ -100,9 +100,8 @@ public class BookmarkCommandService {
             bookmark.setCategory(category);
         }
 
-        // Update tags
+        // Update tags - JPA handles collection differences automatically
         if (tagIds != null) {
-            bookmark.getTags().clear();
             Set<Tag> tags = tagIds.stream()
                     .map(tagId -> tagRepository.findById(tagId)
                             .orElseThrow(() -> ResourceNotFoundException.tag(tagId)))
