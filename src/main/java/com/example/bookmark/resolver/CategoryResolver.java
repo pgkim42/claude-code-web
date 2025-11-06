@@ -1,5 +1,7 @@
 package com.example.bookmark.resolver;
 
+import com.example.bookmark.dto.CreateCategoryInput;
+import com.example.bookmark.dto.UpdateCategoryInput;
 import com.example.bookmark.model.Category;
 import com.example.bookmark.service.CategoryService;
 import lombok.RequiredArgsConstructor;
@@ -9,8 +11,11 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
-import java.util.Map;
 
+/**
+ * GraphQL resolver for category operations.
+ * Thin controller - delegates all logic to CategoryService.
+ */
 @Controller
 @RequiredArgsConstructor
 public class CategoryResolver {
@@ -19,33 +24,26 @@ public class CategoryResolver {
 
     @QueryMapping
     public List<Category> categories() {
-        return categoryService.getAllCategories();
+        return categoryService.findAll();
     }
 
     @QueryMapping
     public Category category(@Argument Long id) {
-        return categoryService.getCategoryById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+        return categoryService.findById(id);
     }
 
     @MutationMapping
-    public Category createCategory(@Argument Map<String, Object> input) {
-        String name = (String) input.get("name");
-        String description = (String) input.get("description");
-
-        return categoryService.createCategory(name, description);
+    public Category createCategory(@Argument CreateCategoryInput input) {
+        return categoryService.create(input.getName(), input.getDescription());
     }
 
     @MutationMapping
-    public Category updateCategory(@Argument Long id, @Argument Map<String, Object> input) {
-        String name = (String) input.get("name");
-        String description = (String) input.get("description");
-
-        return categoryService.updateCategory(id, name, description);
+    public Category updateCategory(@Argument Long id, @Argument UpdateCategoryInput input) {
+        return categoryService.update(id, input.getName(), input.getDescription());
     }
 
     @MutationMapping
     public Boolean deleteCategory(@Argument Long id) {
-        return categoryService.deleteCategory(id);
+        return categoryService.delete(id);
     }
 }
