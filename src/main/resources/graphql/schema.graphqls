@@ -38,6 +38,14 @@ type Query {
     fetchUrlMetadata(url: String!): UrlMetadata!
 }
 
+type Subscription {
+    # Real-time bookmark updates via WebSocket
+    bookmarkChanged: Bookmark!
+    bookmarkCreated: Bookmark!
+    bookmarkUpdated: Bookmark!
+    bookmarkDeleted: ID!
+}
+
 type Mutation {
     # Bookmark mutations
     createBookmark(input: CreateBookmarkInput!): Bookmark!
