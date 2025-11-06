@@ -1,0 +1,64 @@
+type Query {
+    # Bookmark queries
+    bookmarks: [Bookmark!]!
+    bookmark(id: ID!): Bookmark
+    bookmarksByCategory(categoryId: ID!): [Bookmark!]!
+    searchBookmarks(query: String!): [Bookmark!]!
+
+    # Category queries
+    categories: [Category!]!
+    category(id: ID!): Category
+}
+
+type Mutation {
+    # Bookmark mutations
+    createBookmark(input: CreateBookmarkInput!): Bookmark!
+    updateBookmark(id: ID!, input: UpdateBookmarkInput!): Bookmark!
+    deleteBookmark(id: ID!): Boolean!
+
+    # Category mutations
+    createCategory(input: CreateCategoryInput!): Category!
+    updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
+    deleteCategory(id: ID!): Boolean!
+}
+
+type Bookmark {
+    id: ID!
+    title: String!
+    url: String!
+    description: String
+    category: Category
+    createdAt: String!
+    updatedAt: String!
+}
+
+type Category {
+    id: ID!
+    name: String!
+    description: String
+    bookmarks: [Bookmark!]!
+}
+
+input CreateBookmarkInput {
+    title: String!
+    url: String!
+    description: String
+    categoryId: ID
+}
+
+input UpdateBookmarkInput {
+    title: String
+    url: String
+    description: String
+    categoryId: ID
+}
+
+input CreateCategoryInput {
+    name: String!
+    description: String
+}
+
+input UpdateCategoryInput {
+    name: String
+    description: String
+}
