@@ -1,6 +1,8 @@
 package com.example.bookmark.service;
 
 import com.example.bookmark.dto.UrlMetadata;
+import com.example.bookmark.event.BookmarkEvent;
+import com.example.bookmark.event.BookmarkEventPublisher;
 import com.example.bookmark.exception.ResourceNotFoundException;
 import com.example.bookmark.model.Bookmark;
 import com.example.bookmark.model.Category;
@@ -37,6 +39,7 @@ public class BookmarkMetadataService {
     private final CategoryRepository categoryRepository;
     private final TagRepository tagRepository;
     private final UrlMetadataService urlMetadataService;
+    private final BookmarkEventPublisher eventPublisher;
 
     /**
      * Fetch metadata from URL without creating bookmark
@@ -88,6 +91,10 @@ public class BookmarkMetadataService {
 
         Bookmark saved = bookmarkRepository.save(bookmark);
         log.info("Created bookmark from URL with id: {}", saved.getId());
+
+        // Publish event for subscribers
+        eventPublisher.publish(new BookmarkEvent(BookmarkEvent.EventType.CREATED, saved, null));
+
         return saved;
     }
 
@@ -105,6 +112,10 @@ public class BookmarkMetadataService {
 
         Bookmark updated = bookmarkRepository.save(bookmark);
         log.info("Refreshed metadata for bookmark id: {}", id);
+
+        // Publish event for subscribers
+        eventPublisher.publish(new BookmarkEvent(BookmarkEvent.EventType.UPDATED, updated, null));
+
         return updated;
     }
 

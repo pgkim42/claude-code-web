@@ -1,5 +1,7 @@
 package com.example.bookmark.service;
 
+import com.example.bookmark.event.BookmarkEvent;
+import com.example.bookmark.event.BookmarkEventPublisher;
 import com.example.bookmark.exception.ResourceNotFoundException;
 import com.example.bookmark.exception.ValidationException;
 import com.example.bookmark.model.Bookmark;
@@ -36,6 +38,7 @@ public class BookmarkCommandService {
     private final BookmarkRepository bookmarkRepository;
     private final CategoryRepository categoryRepository;
     private final TagRepository tagRepository;
+    private final BookmarkEventPublisher eventPublisher;
 
     /**
      * Create a new bookmark
@@ -75,6 +78,10 @@ public class BookmarkCommandService {
 
         Bookmark saved = bookmarkRepository.save(bookmark);
         log.info("Created bookmark with id: {}", saved.getId());
+
+        // Publish event for subscribers
+        eventPublisher.publish(new BookmarkEvent(BookmarkEvent.EventType.CREATED, saved, null));
+
         return saved;
     }
 
@@ -119,6 +126,10 @@ public class BookmarkCommandService {
 
         Bookmark updated = bookmarkRepository.save(bookmark);
         log.info("Updated bookmark id: {}", id);
+
+        // Publish event for subscribers
+        eventPublisher.publish(new BookmarkEvent(BookmarkEvent.EventType.UPDATED, updated, null));
+
         return updated;
     }
 
@@ -134,6 +145,10 @@ public class BookmarkCommandService {
 
         bookmarkRepository.deleteById(id);
         log.info("Deleted bookmark id: {}", id);
+
+        // Publish event for subscribers (bookmark is already deleted, so only send ID)
+        eventPublisher.publish(new BookmarkEvent(BookmarkEvent.EventType.DELETED, null, id));
+
         return true;
     }
 
