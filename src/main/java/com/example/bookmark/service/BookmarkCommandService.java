@@ -10,12 +10,15 @@ import com.example.bookmark.exception.ValidationException;
 import com.example.bookmark.model.Bookmark;
 import com.example.bookmark.model.Category;
 import com.example.bookmark.model.Tag;
+import com.example.bookmark.model.User;
 import com.example.bookmark.repository.BookmarkRepository;
 import com.example.bookmark.repository.CategoryRepository;
 import com.example.bookmark.repository.TagRepository;
+import com.example.bookmark.security.BookmarkSecurityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,18 +49,28 @@ public class BookmarkCommandService {
     private final TagRepository tagRepository;
     private final BookmarkEventPublisher subscriptionEventPublisher;
     private final ApplicationEventPublisher domainEventPublisher;
+    private final BookmarkSecurityService securityService;
 
     /**
      * Create a new bookmark
+     * Requires authentication - user will be automatically set
      */
+    @PreAuthorize("@bookmarkSecurity.isAuthenticated()")
     public Bookmark create(String title, String url, String description, Long categoryId,
                           List<Long> tagIds, Boolean isFavorite, Integer rating, Boolean isPublic) {
         log.info("Creating bookmark with url: {}", url);
+
+        // Get current user
+        User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) {
+            throw new IllegalStateException("User must be authenticated to create bookmarks");
+        }
 
         Bookmark bookmark = new Bookmark();
         bookmark.setTitle(title);
         bookmark.setUrl(url);
         bookmark.setDescription(description);
+        bookmark.setUser(currentUser);  // Set owner
 
         // Set category
         if (categoryId != null) {
@@ -97,7 +110,9 @@ public class BookmarkCommandService {
 
     /**
      * Update an existing bookmark
+     * Only owner or admin can update
      */
+    @PreAuthorize("@bookmarkSecurity.isOwner(#id)")
     public Bookmark update(Long id, String title, String url, String description, Long categoryId,
                           List<Long> tagIds, Boolean isFavorite, Integer rating, Boolean isPublic) {
         log.info("Updating bookmark id: {}", id);
@@ -148,7 +163,9 @@ public class BookmarkCommandService {
 
     /**
      * Delete a bookmark
+     * Only owner or admin can delete
      */
+    @PreAuthorize("@bookmarkSecurity.isOwner(#id)")
     public boolean delete(Long id) {
         log.info("Deleting bookmark id: {}", id);
 
@@ -170,7 +187,9 @@ public class BookmarkCommandService {
 
     /**
      * Toggle favorite status
+     * Only owner or admin can toggle
      */
+    @PreAuthorize("@bookmarkSecurity.isOwner(#id)")
     public Bookmark toggleFavorite(Long id) {
         log.info("Toggling favorite for bookmark id: {}", id);
 
@@ -183,7 +202,9 @@ public class BookmarkCommandService {
 
     /**
      * Set rating for a bookmark
+     * Only owner or admin can set rating
      */
+    @PreAuthorize("@bookmarkSecurity.isOwner(#id)")
     public Bookmark setRating(Long id, Integer rating) {
         log.info("Setting rating {} for bookmark id: {}", rating, id);
 
@@ -198,12 +219,19 @@ public class BookmarkCommandService {
 
     /**
      * Record a visit to a bookmark
+     * Can view if public or owner
      */
+    @PreAuthorize("@bookmarkSecurity.isAuthenticated()")
     public Bookmark recordVisit(Long id) {
         log.debug("Recording visit for bookmark id: {}", id);
 
         Bookmark bookmark = bookmarkRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.bookmark(id));
+
+        // Check if user can view this bookmark
+        if (!securityService.canView(bookmark)) {
+            throw new IllegalStateException("Access denied: cannot view this bookmark");
+        }
 
         bookmark.recordVisit();
         return bookmarkRepository.save(bookmark);
@@ -211,7 +239,9 @@ public class BookmarkCommandService {
 
     /**
      * Add a tag to a bookmark
+     * Only owner or admin can add tags
      */
+    @PreAuthorize("@bookmarkSecurity.isOwner(#bookmarkId)")
     public Bookmark addTag(Long bookmarkId, Long tagId) {
         log.info("Adding tag {} to bookmark {}", tagId, bookmarkId);
 
@@ -227,7 +257,9 @@ public class BookmarkCommandService {
 
     /**
      * Remove a tag from a bookmark
+     * Only owner or admin can remove tags
      */
+    @PreAuthorize("@bookmarkSecurity.isOwner(#bookmarkId)")
     public Bookmark removeTag(Long bookmarkId, Long tagId) {
         log.info("Removing tag {} from bookmark {}", tagId, bookmarkId);
 
