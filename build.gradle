@@ -29,6 +29,12 @@ dependencies {
     // Spring for GraphQL
     implementation 'org.springframework.boot:spring-boot-starter-graphql'
 
+    // Spring AOP
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // Caffeine Cache
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
     // H2 Database
     runtimeOnly 'com.h2database:h2'
 
@@ -43,6 +49,11 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework:spring-webflux'
     testImplementation 'org.springframework.graphql:spring-graphql-test'
+}
+
+// Enable parameter names in compiled bytecode for reflection-based logging
+tasks.withType(JavaCompile) {
+    options.compilerArgs += '-parameters'
 }
 
 tasks.named('test') {
