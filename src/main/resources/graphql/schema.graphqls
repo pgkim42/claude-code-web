@@ -1,4 +1,9 @@
 type Query {
+    # User queries
+    currentUser: User
+    users: [User!]!
+    user(id: ID!): User
+
     # Bookmark queries
     bookmarks: [Bookmark!]!
     bookmarksConnection(first: Int, after: String): BookmarkConnection!
@@ -47,6 +52,11 @@ type Subscription {
 }
 
 type Mutation {
+    # Authentication mutations
+    signup(input: SignupInput!): AuthPayload!
+    login(input: LoginInput!): AuthPayload!
+    logout: Boolean!
+
     # Bookmark mutations
     createBookmark(input: CreateBookmarkInput!): Bookmark!
     updateBookmark(id: ID!, input: UpdateBookmarkInput!): Bookmark!
@@ -74,12 +84,28 @@ type Mutation {
     deleteTag(id: ID!): Boolean!
 }
 
+type User {
+    id: ID!
+    username: String!
+    email: String!
+    role: String!
+    enabled: Boolean!
+    createdAt: String!
+    updatedAt: String!
+}
+
+type AuthPayload {
+    user: User!
+    message: String!
+}
+
 type Bookmark {
     id: ID!
     title: String!
     url: String!
     description: String
     category: Category
+    user: User!
     tags: [Tag!]!
     isFavorite: Boolean!
     rating: Int
@@ -124,6 +150,17 @@ type CategoryStatistics {
     categoryId: ID!
     categoryName: String!
     bookmarkCount: Int!
+}
+
+input SignupInput {
+    username: String!
+    password: String!
+    email: String!
+}
+
+input LoginInput {
+    username: String!
+    password: String!
 }
 
 input CreateBookmarkInput {
