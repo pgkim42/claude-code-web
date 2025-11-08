@@ -3,11 +3,15 @@ package com.example.bookmark;
 import com.example.bookmark.model.Bookmark;
 import com.example.bookmark.model.Category;
 import com.example.bookmark.model.Tag;
+import com.example.bookmark.model.User;
+import com.example.bookmark.model.UserRole;
 import com.example.bookmark.repository.BookmarkRepository;
 import com.example.bookmark.repository.CategoryRepository;
 import com.example.bookmark.repository.TagRepository;
+import com.example.bookmark.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -19,9 +23,36 @@ public class DataInitializer implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final BookmarkRepository bookmarkRepository;
     private final TagRepository tagRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
+        // Create users
+        User adminUser = new User(
+                "admin",
+                passwordEncoder.encode("admin123"),
+                "admin@example.com",
+                UserRole.ADMIN
+        );
+        adminUser = userRepository.save(adminUser);
+
+        User johnUser = new User(
+                "john",
+                passwordEncoder.encode("john123"),
+                "john@example.com",
+                UserRole.USER
+        );
+        johnUser = userRepository.save(johnUser);
+
+        User janeUser = new User(
+                "jane",
+                passwordEncoder.encode("jane123"),
+                "jane@example.com",
+                UserRole.USER
+        );
+        janeUser = userRepository.save(janeUser);
+
         // Create categories
         Category devCategory = new Category("Development", "Programming and development resources");
         Category designCategory = new Category("Design", "Design inspiration and tools");
@@ -52,12 +83,13 @@ public class DataInitializer implements CommandLineRunner {
         tagRepository.save(tutorialTag);
         tagRepository.save(documentationTag);
 
-        // Create bookmarks with tags and additional properties
+        // Create bookmarks with tags and additional properties (John's bookmarks)
         Bookmark springBoot = new Bookmark(
                 "Spring Boot Documentation",
                 "https://spring.io/projects/spring-boot",
                 "Official Spring Boot documentation and guides",
-                devCategory
+                devCategory,
+                johnUser
         );
         springBoot.setIsFavorite(true);
         springBoot.setRating(5);
@@ -72,7 +104,8 @@ public class DataInitializer implements CommandLineRunner {
                 "GraphQL Official",
                 "https://graphql.org/",
                 "Learn about GraphQL, how it works, and how to use it",
-                devCategory
+                devCategory,
+                johnUser
         );
         graphqlDoc.setIsFavorite(true);
         graphqlDoc.setRating(5);
@@ -86,7 +119,8 @@ public class DataInitializer implements CommandLineRunner {
                 "GitHub",
                 "https://github.com",
                 "Where the world builds software",
-                devCategory
+                devCategory,
+                johnUser
         );
         github.setIsFavorite(true);
         github.setRating(5);
@@ -98,7 +132,8 @@ public class DataInitializer implements CommandLineRunner {
                 "Baeldung",
                 "https://www.baeldung.com",
                 "Java, Spring and Web Development tutorials",
-                learningCategory
+                learningCategory,
+                johnUser
         );
         baeldung.setIsFavorite(false);
         baeldung.setRating(4);
@@ -109,16 +144,19 @@ public class DataInitializer implements CommandLineRunner {
         baeldung.getTags().add(tutorialTag);
         bookmarkRepository.save(baeldung);
 
+        // Jane's bookmarks
         Bookmark javaDoc = new Bookmark(
                 "Java Documentation",
                 "https://docs.oracle.com/en/java/",
                 "Official Java documentation from Oracle",
-                devCategory
+                devCategory,
+                janeUser
         );
         javaDoc.setIsFavorite(false);
         javaDoc.setRating(4);
         javaDoc.setVisitCount(12);
         javaDoc.setLastVisitedAt(LocalDateTime.now().minusDays(7));
+        javaDoc.setIsPublic(false); // Private bookmark
         javaDoc.getTags().add(javaTag);
         javaDoc.getTags().add(documentationTag);
         bookmarkRepository.save(javaDoc);
@@ -127,7 +165,8 @@ public class DataInitializer implements CommandLineRunner {
                 "Dribbble",
                 "https://dribbble.com",
                 "Discover the world's top designers & creatives",
-                designCategory
+                designCategory,
+                janeUser
         );
         dribbble.setIsFavorite(true);
         dribbble.setRating(5);
@@ -141,7 +180,8 @@ public class DataInitializer implements CommandLineRunner {
                 "Figma",
                 "https://www.figma.com",
                 "Collaborative interface design tool",
-                designCategory
+                designCategory,
+                janeUser
         );
         figma.setIsFavorite(true);
         figma.setRating(5);
@@ -151,11 +191,13 @@ public class DataInitializer implements CommandLineRunner {
         figma.getTags().add(uiUxTag);
         bookmarkRepository.save(figma);
 
+        // Admin's bookmarks
         Bookmark hackerNews = new Bookmark(
                 "Hacker News",
                 "https://news.ycombinator.com",
                 "Social news website focusing on computer science",
-                newsCategory
+                newsCategory,
+                adminUser
         );
         hackerNews.setIsFavorite(false);
         hackerNews.setRating(4);
@@ -168,12 +210,14 @@ public class DataInitializer implements CommandLineRunner {
                 "The Verge",
                 "https://www.theverge.com",
                 "Technology news and media network",
-                newsCategory
+                newsCategory,
+                adminUser
         );
         theVerge.setIsFavorite(false);
         theVerge.setRating(3);
         theVerge.setVisitCount(21);
         theVerge.setLastVisitedAt(LocalDateTime.now().minusDays(5));
+        theVerge.setIsPublic(false); // Private bookmark
         theVerge.getTags().add(newsTag);
         bookmarkRepository.save(theVerge);
 
@@ -181,7 +225,8 @@ public class DataInitializer implements CommandLineRunner {
                 "MDN Web Docs",
                 "https://developer.mozilla.org",
                 "Resources for developers, by developers",
-                learningCategory
+                learningCategory,
+                adminUser
         );
         mdnDocs.setIsFavorite(false);
         mdnDocs.setRating(5);
@@ -194,12 +239,18 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("\n=================================");
         System.out.println("✅ Sample data initialized!");
         System.out.println("=================================");
+        System.out.println("👥 Users: " + userRepository.count());
         System.out.println("📚 Categories: " + categoryRepository.count());
         System.out.println("🔖 Bookmarks: " + bookmarkRepository.count());
         System.out.println("🏷️  Tags: " + tagRepository.count());
         System.out.println("⭐ Favorites: " + bookmarkRepository.countFavorites());
         System.out.println("👁️  Total Visits: " + bookmarkRepository.getTotalVisits());
         System.out.println("⭐ Average Rating: " + String.format("%.2f", bookmarkRepository.getAverageRating()));
+        System.out.println("=================================");
+        System.out.println("🔐 Test Accounts:");
+        System.out.println("   Admin: admin/admin123 (ADMIN role)");
+        System.out.println("   John:  john/john123 (USER role)");
+        System.out.println("   Jane:  jane/jane123 (USER role)");
         System.out.println("=================================\n");
     }
 }

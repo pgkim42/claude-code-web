@@ -3,10 +3,13 @@ package com.example.bookmark.service;
 import com.example.bookmark.dto.*;
 import com.example.bookmark.exception.ResourceNotFoundException;
 import com.example.bookmark.model.Bookmark;
+import com.example.bookmark.model.User;
 import com.example.bookmark.repository.BookmarkRepository;
+import com.example.bookmark.security.BookmarkSecurityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Query service for bookmark read operations.
@@ -32,19 +36,24 @@ import java.util.List;
 public class BookmarkQueryService {
 
     private final BookmarkRepository bookmarkRepository;
+    private final BookmarkSecurityService securityService;
 
     /**
      * Find all bookmarks
+     * Returns only public bookmarks or user's own bookmarks
      */
     public List<Bookmark> findAll() {
         log.debug("Finding all bookmarks");
-        return bookmarkRepository.findAll();
+        List<Bookmark> allBookmarks = bookmarkRepository.findAll();
+        return filterViewableBookmarks(allBookmarks);
     }
 
     /**
      * Find bookmark by ID
+     * Only returns if public or owned by current user
      * @throws ResourceNotFoundException if bookmark not found
      */
+    @PostAuthorize("@bookmarkSecurity.canView(returnObject)")
     public Bookmark findById(Long id) {
         log.debug("Finding bookmark by id: {}", id);
         return bookmarkRepository.findById(id)
@@ -53,74 +62,90 @@ public class BookmarkQueryService {
 
     /**
      * Find bookmarks by category
+     * Returns only viewable bookmarks
      */
     public List<Bookmark> findByCategory(Long categoryId) {
         log.debug("Finding bookmarks by category: {}", categoryId);
-        return bookmarkRepository.findByCategoryId(categoryId);
+        List<Bookmark> bookmarks = bookmarkRepository.findByCategoryId(categoryId);
+        return filterViewableBookmarks(bookmarks);
     }
 
     /**
      * Simple search by title
+     * Returns only viewable bookmarks
      */
     public List<Bookmark> searchByTitle(String query) {
         log.debug("Searching bookmarks by title: {}", query);
-        return bookmarkRepository.findByTitleContainingIgnoreCase(query);
+        List<Bookmark> bookmarks = bookmarkRepository.findByTitleContainingIgnoreCase(query);
+        return filterViewableBookmarks(bookmarks);
     }
 
     /**
      * Advanced search with multiple filters
+     * Returns only viewable bookmarks
      */
     public List<Bookmark> advancedSearch(BookmarkFilter filter) {
         log.debug("Advanced search with filter: {}", filter);
-        return bookmarkRepository.searchBookmarks(
+        List<Bookmark> bookmarks = bookmarkRepository.searchBookmarks(
                 filter.getQuery(),
                 filter.getCategoryId(),
                 filter.getTagName(),
                 filter.getIsFavorite(),
                 filter.getMinRating()
         );
+        return filterViewableBookmarks(bookmarks);
     }
 
     /**
      * Find favorite bookmarks
+     * Returns only viewable bookmarks
      */
     public List<Bookmark> findFavorites() {
         log.debug("Finding favorite bookmarks");
-        return bookmarkRepository.findByIsFavoriteTrue();
+        List<Bookmark> favorites = bookmarkRepository.findByIsFavoriteTrue();
+        return filterViewableBookmarks(favorites);
     }
 
     /**
      * Find bookmarks by tag name
+     * Returns only viewable bookmarks
      */
     public List<Bookmark> findByTag(String tagName) {
         log.debug("Finding bookmarks by tag: {}", tagName);
-        return bookmarkRepository.findByTagName(tagName);
+        List<Bookmark> bookmarks = bookmarkRepository.findByTagName(tagName);
+        return filterViewableBookmarks(bookmarks);
     }
 
     /**
      * Find most visited bookmarks
+     * Returns only viewable bookmarks
      */
     public List<Bookmark> findMostVisited(Integer limit) {
         int pageSize = limit != null ? limit : 10;
         log.debug("Finding most visited bookmarks (limit: {})", pageSize);
-        return bookmarkRepository.findMostVisited(PageRequest.of(0, pageSize));
+        List<Bookmark> bookmarks = bookmarkRepository.findMostVisited(PageRequest.of(0, pageSize));
+        return filterViewableBookmarks(bookmarks);
     }
 
     /**
      * Find recently visited bookmarks
+     * Returns only viewable bookmarks
      */
     public List<Bookmark> findRecentlyVisited(Integer limit) {
         int pageSize = limit != null ? limit : 10;
         log.debug("Finding recently visited bookmarks (limit: {})", pageSize);
-        return bookmarkRepository.findRecentlyVisited(PageRequest.of(0, pageSize));
+        List<Bookmark> bookmarks = bookmarkRepository.findRecentlyVisited(PageRequest.of(0, pageSize));
+        return filterViewableBookmarks(bookmarks);
     }
 
     /**
      * Find bookmarks with rating >= minRating
+     * Returns only viewable bookmarks
      */
     public List<Bookmark> findTopRated(Integer minRating) {
         log.debug("Finding top rated bookmarks (minRating: {})", minRating);
-        return bookmarkRepository.findByRatingGreaterThanEqual(minRating);
+        List<Bookmark> bookmarks = bookmarkRepository.findByRatingGreaterThanEqual(minRating);
+        return filterViewableBookmarks(bookmarks);
     }
 
     /**
@@ -143,6 +168,9 @@ public class BookmarkQueryService {
         // Fetch limit + 1 to check if there's a next page
         PageRequest pageRequest = PageRequest.of(0, limit + 1);
         List<Bookmark> bookmarks = bookmarkRepository.findByIdGreaterThanOrderByIdAsc(afterId, pageRequest);
+
+        // Filter viewable bookmarks
+        bookmarks = filterViewableBookmarks(bookmarks);
 
         // Check if there's a next page
         boolean hasNextPage = bookmarks.size() > limit;
@@ -187,5 +215,27 @@ public class BookmarkQueryService {
             log.error("Failed to decode cursor: {}", cursor, e);
             throw new IllegalArgumentException("Invalid cursor format");
         }
+    }
+
+    /**
+     * Filter bookmarks to only include viewable ones
+     * (public bookmarks or owned by current user)
+     */
+    private List<Bookmark> filterViewableBookmarks(List<Bookmark> bookmarks) {
+        User currentUser = securityService.getCurrentUser();
+
+        return bookmarks.stream()
+                .filter(bookmark -> {
+                    // Public bookmarks are viewable by everyone
+                    if (Boolean.TRUE.equals(bookmark.getIsPublic())) {
+                        return true;
+                    }
+                    // Private bookmarks only viewable by owner
+                    if (currentUser != null && bookmark.getUser() != null) {
+                        return bookmark.getUser().getId().equals(currentUser.getId());
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
     }
 }
