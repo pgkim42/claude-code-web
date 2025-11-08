@@ -32,6 +32,9 @@ dependencies {
     // Spring AOP
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+    // Caffeine Cache
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
     // H2 Database
     runtimeOnly 'com.h2database:h2'
 

@@ -7,6 +7,7 @@ import com.example.bookmark.repository.CategoryRepository;
 import com.example.bookmark.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +36,10 @@ public class BookmarkStatisticsService {
 
     /**
      * Get overall bookmark statistics
+     *
+     * Cached for 5 minutes to avoid expensive count queries.
      */
+    @Cacheable(value = "overallStatistics")
     public BookmarkStatistics getOverallStatistics() {
         log.debug("Calculating overall bookmark statistics");
 
@@ -59,7 +63,10 @@ public class BookmarkStatisticsService {
     /**
      * Get statistics per category.
      * Optimized to use single JPQL query instead of N+1 queries.
+     *
+     * Cached for 5 minutes to avoid expensive aggregation queries.
      */
+    @Cacheable(value = "categoryStatistics")
     public List<CategoryStatistics> getCategoryStatistics() {
         log.debug("Calculating category statistics (optimized)");
         return bookmarkRepository.getCategoryStatistics();
