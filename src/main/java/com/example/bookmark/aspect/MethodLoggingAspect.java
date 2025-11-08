@@ -1,5 +1,6 @@
 package com.example.bookmark.aspect;
 
+import com.example.bookmark.util.LoggingUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
@@ -52,7 +53,7 @@ public class MethodLoggingAspect {
         if (result != null) {
             String resultType = result.getClass().getSimpleName();
             log.info("📤 [RETURN] {} returned: {} ({})",
-                    methodName, truncate(result.toString(), 100), resultType);
+                    methodName, LoggingUtils.truncate(result.toString(), 100), resultType);
         } else {
             log.info("📤 [RETURN] {} returned: null", methodName);
         }
@@ -69,15 +70,5 @@ public class MethodLoggingAspect {
         String methodName = joinPoint.getSignature().toShortString();
         log.error("💥 [EXCEPTION] {} threw {}: {}",
                 methodName, exception.getClass().getSimpleName(), exception.getMessage());
-    }
-
-    /**
-     * 문자열 길이 제한 (너무 긴 로그 방지)
-     */
-    private String truncate(String str, int maxLength) {
-        if (str.length() <= maxLength) {
-            return str;
-        }
-        return str.substring(0, maxLength) + "...";
     }
 }

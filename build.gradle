@@ -51,6 +51,11 @@ dependencies {
     testImplementation 'org.springframework.graphql:spring-graphql-test'
 }
 
+// Enable parameter names in compiled bytecode for reflection-based logging
+tasks.withType(JavaCompile) {
+    options.compilerArgs += '-parameters'
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }

@@ -1,6 +1,7 @@
 package com.example.bookmark.aspect;
 
 import com.example.bookmark.aspect.annotation.Loggable;
+import com.example.bookmark.util.LoggingUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -68,7 +69,7 @@ public class LoggableAspect {
             log.info("║ Execution Time: {}ms", executionTime);
             if (result != null) {
                 log.info("║ Return Type: {}", result.getClass().getSimpleName());
-                log.info("║ Return Value: {}", truncate(result.toString(), 200));
+                log.info("║ Return Value: {}", LoggingUtils.truncate(result.toString(), 200));
             } else {
                 log.info("║ Return Value: null");
             }
@@ -87,12 +88,5 @@ public class LoggableAspect {
 
             throw ex;
         }
-    }
-
-    private String truncate(String str, int maxLength) {
-        if (str.length() <= maxLength) {
-            return str;
-        }
-        return str.substring(0, maxLength) + "...";
     }
 }

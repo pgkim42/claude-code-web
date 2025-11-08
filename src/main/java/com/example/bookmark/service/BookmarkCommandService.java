@@ -15,8 +15,6 @@ import com.example.bookmark.repository.CategoryRepository;
 import com.example.bookmark.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +32,8 @@ import java.util.stream.Collectors;
  * - Easier to add validation
  * - Audit logging in one place
  * - Can trigger events/notifications
+ *
+ * Note: Cache eviction is handled by StatisticsEventListener (separation of concerns)
  */
 @Service
 @RequiredArgsConstructor
@@ -49,13 +49,7 @@ public class BookmarkCommandService {
 
     /**
      * Create a new bookmark
-     *
-     * Evicts statistics caches as counts will change.
      */
-    @Caching(evict = {
-        @CacheEvict(value = "overallStatistics", allEntries = true),
-        @CacheEvict(value = "categoryStatistics", allEntries = true)
-    })
     public Bookmark create(String title, String url, String description, Long categoryId,
                           List<Long> tagIds, Boolean isFavorite, Integer rating, Boolean isPublic) {
         log.info("Creating bookmark with url: {}", url);
@@ -103,13 +97,7 @@ public class BookmarkCommandService {
 
     /**
      * Update an existing bookmark
-     *
-     * Evicts statistics caches as data might change (category, favorite, rating).
      */
-    @Caching(evict = {
-        @CacheEvict(value = "overallStatistics", allEntries = true),
-        @CacheEvict(value = "categoryStatistics", allEntries = true)
-    })
     public Bookmark update(Long id, String title, String url, String description, Long categoryId,
                           List<Long> tagIds, Boolean isFavorite, Integer rating, Boolean isPublic) {
         log.info("Updating bookmark id: {}", id);
@@ -160,13 +148,7 @@ public class BookmarkCommandService {
 
     /**
      * Delete a bookmark
-     *
-     * Evicts statistics caches as counts will change.
      */
-    @Caching(evict = {
-        @CacheEvict(value = "overallStatistics", allEntries = true),
-        @CacheEvict(value = "categoryStatistics", allEntries = true)
-    })
     public boolean delete(Long id) {
         log.info("Deleting bookmark id: {}", id);
 
@@ -188,13 +170,7 @@ public class BookmarkCommandService {
 
     /**
      * Toggle favorite status
-     *
-     * Evicts statistics caches as favorite count will change.
      */
-    @Caching(evict = {
-        @CacheEvict(value = "overallStatistics", allEntries = true),
-        @CacheEvict(value = "categoryStatistics", allEntries = true)
-    })
     public Bookmark toggleFavorite(Long id) {
         log.info("Toggling favorite for bookmark id: {}", id);
 
@@ -207,13 +183,7 @@ public class BookmarkCommandService {
 
     /**
      * Set rating for a bookmark
-     *
-     * Evicts statistics caches as average rating will change.
      */
-    @Caching(evict = {
-        @CacheEvict(value = "overallStatistics", allEntries = true),
-        @CacheEvict(value = "categoryStatistics", allEntries = true)
-    })
     public Bookmark setRating(Long id, Integer rating) {
         log.info("Setting rating {} for bookmark id: {}", rating, id);
 
@@ -228,13 +198,7 @@ public class BookmarkCommandService {
 
     /**
      * Record a visit to a bookmark
-     *
-     * Evicts statistics caches as total visits will change.
      */
-    @Caching(evict = {
-        @CacheEvict(value = "overallStatistics", allEntries = true),
-        @CacheEvict(value = "categoryStatistics", allEntries = true)
-    })
     public Bookmark recordVisit(Long id) {
         log.debug("Recording visit for bookmark id: {}", id);
 
@@ -247,10 +211,7 @@ public class BookmarkCommandService {
 
     /**
      * Add a tag to a bookmark
-     *
-     * Evicts category statistics cache as tag associations might affect counts.
      */
-    @CacheEvict(value = "categoryStatistics", allEntries = true)
     public Bookmark addTag(Long bookmarkId, Long tagId) {
         log.info("Adding tag {} to bookmark {}", tagId, bookmarkId);
 
@@ -266,10 +227,7 @@ public class BookmarkCommandService {
 
     /**
      * Remove a tag from a bookmark
-     *
-     * Evicts category statistics cache as tag associations might affect counts.
      */
-    @CacheEvict(value = "categoryStatistics", allEntries = true)
     public Bookmark removeTag(Long bookmarkId, Long tagId) {
         log.info("Removing tag {} from bookmark {}", tagId, bookmarkId);
 
