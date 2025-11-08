@@ -29,6 +29,9 @@ dependencies {
     // Spring for GraphQL
     implementation 'org.springframework.boot:spring-boot-starter-graphql'
 
+    // Spring AOP
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
     // H2 Database
     runtimeOnly 'com.h2database:h2'
 
