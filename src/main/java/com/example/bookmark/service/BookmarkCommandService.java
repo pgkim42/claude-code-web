@@ -1,5 +1,7 @@
 package com.example.bookmark.service;
 
+import com.example.bookmark.event.BookmarkEvent;
+import com.example.bookmark.event.BookmarkEventPublisher;
 import com.example.bookmark.event.domain.BookmarkCreatedEvent;
 import com.example.bookmark.event.domain.BookmarkDeletedEvent;
 import com.example.bookmark.event.domain.BookmarkUpdatedEvent;
@@ -42,7 +44,8 @@ public class BookmarkCommandService {
     private final BookmarkRepository bookmarkRepository;
     private final CategoryRepository categoryRepository;
     private final TagRepository tagRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final BookmarkEventPublisher subscriptionEventPublisher;
+    private final ApplicationEventPublisher domainEventPublisher;
 
     /**
      * Create a new bookmark
@@ -89,8 +92,11 @@ public class BookmarkCommandService {
         Bookmark saved = bookmarkRepository.save(bookmark);
         log.info("Created bookmark with id: {}", saved.getId());
 
-        // Publish domain event
-        eventPublisher.publishEvent(new BookmarkCreatedEvent(this, saved));
+        // Publish domain event (for statistics, async processing)
+        domainEventPublisher.publishEvent(new BookmarkCreatedEvent(this, saved));
+
+        // Publish event for GraphQL subscribers (real-time updates)
+        subscriptionEventPublisher.publish(new BookmarkEvent(BookmarkEvent.EventType.CREATED, saved, null));
 
         return saved;
     }
@@ -143,8 +149,11 @@ public class BookmarkCommandService {
         Bookmark updated = bookmarkRepository.save(bookmark);
         log.info("Updated bookmark id: {}", id);
 
-        // Publish domain event
-        eventPublisher.publishEvent(new BookmarkUpdatedEvent(this, updated));
+        // Publish domain event (for statistics, async processing)
+        domainEventPublisher.publishEvent(new BookmarkUpdatedEvent(this, updated));
+
+        // Publish event for GraphQL subscribers (real-time updates)
+        subscriptionEventPublisher.publish(new BookmarkEvent(BookmarkEvent.EventType.UPDATED, updated, null));
 
         return updated;
     }
@@ -168,8 +177,11 @@ public class BookmarkCommandService {
         bookmarkRepository.deleteById(id);
         log.info("Deleted bookmark id: {}", id);
 
-        // Publish domain event
-        eventPublisher.publishEvent(new BookmarkDeletedEvent(this, id));
+        // Publish domain event (for statistics, async processing)
+        domainEventPublisher.publishEvent(new BookmarkDeletedEvent(this, id));
+
+        // Publish event for GraphQL subscribers (real-time updates)
+        subscriptionEventPublisher.publish(new BookmarkEvent(BookmarkEvent.EventType.DELETED, null, id));
 
         return true;
     }

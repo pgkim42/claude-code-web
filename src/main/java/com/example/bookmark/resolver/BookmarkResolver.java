@@ -41,6 +41,11 @@ public class BookmarkResolver {
     }
 
     @QueryMapping
+    public BookmarkConnection bookmarksConnection(@Argument Integer first, @Argument String after) {
+        return queryService.findWithCursor(first, after);
+    }
+
+    @QueryMapping
     public Bookmark bookmark(@Argument Long id) {
         return queryService.findById(id);
     }
