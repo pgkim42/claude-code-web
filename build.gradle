@@ -32,6 +32,9 @@ dependencies {
     // Spring AOP
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
     // Caffeine Cache
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
 
