@@ -32,6 +32,11 @@ public class Bookmark {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    // Owner of the bookmark
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     // Many-to-Many relationship with Tags
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
@@ -104,6 +109,18 @@ public class Bookmark {
         this.url = url;
         this.description = description;
         this.category = category;
+        this.isFavorite = false;
+        this.isPublic = true;
+        this.visitCount = 0;
+        this.metadataFetched = false;
+    }
+
+    public Bookmark(String title, String url, String description, Category category, User user) {
+        this.title = title;
+        this.url = url;
+        this.description = description;
+        this.category = category;
+        this.user = user;
         this.isFavorite = false;
         this.isPublic = true;
         this.visitCount = 0;
