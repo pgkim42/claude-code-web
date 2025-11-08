@@ -1,5 +1,8 @@
 package com.example.bookmark.service;
 
+import com.example.bookmark.event.domain.BookmarkCreatedEvent;
+import com.example.bookmark.event.domain.BookmarkDeletedEvent;
+import com.example.bookmark.event.domain.BookmarkUpdatedEvent;
 import com.example.bookmark.exception.ResourceNotFoundException;
 import com.example.bookmark.exception.ValidationException;
 import com.example.bookmark.model.Bookmark;
@@ -12,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +42,7 @@ public class BookmarkCommandService {
     private final BookmarkRepository bookmarkRepository;
     private final CategoryRepository categoryRepository;
     private final TagRepository tagRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Create a new bookmark
@@ -83,6 +88,10 @@ public class BookmarkCommandService {
 
         Bookmark saved = bookmarkRepository.save(bookmark);
         log.info("Created bookmark with id: {}", saved.getId());
+
+        // Publish domain event
+        eventPublisher.publishEvent(new BookmarkCreatedEvent(this, saved));
+
         return saved;
     }
 
@@ -133,6 +142,10 @@ public class BookmarkCommandService {
 
         Bookmark updated = bookmarkRepository.save(bookmark);
         log.info("Updated bookmark id: {}", id);
+
+        // Publish domain event
+        eventPublisher.publishEvent(new BookmarkUpdatedEvent(this, updated));
+
         return updated;
     }
 
@@ -154,6 +167,10 @@ public class BookmarkCommandService {
 
         bookmarkRepository.deleteById(id);
         log.info("Deleted bookmark id: {}", id);
+
+        // Publish domain event
+        eventPublisher.publishEvent(new BookmarkDeletedEvent(this, id));
+
         return true;
     }
 
