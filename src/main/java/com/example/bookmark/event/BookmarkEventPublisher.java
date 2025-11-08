@@ -16,8 +16,9 @@ import reactor.core.publisher.Sinks;
 public class BookmarkEventPublisher {
 
     // Multicast sink - multiple subscribers can receive the same events
-    // FAIL_FAST: fails fast if overflow occurs (better for real-time updates)
-    private final Sinks.Many<BookmarkEvent> sink = Sinks.many().multicast().onBackpressureBuffer();
+    // Buffer size: 256 (bounded to prevent OutOfMemoryError)
+    // Oldest events are dropped if buffer is full
+    private final Sinks.Many<BookmarkEvent> sink = Sinks.many().multicast().onBackpressureBuffer(256);
 
     /**
      * Publish a bookmark event

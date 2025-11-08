@@ -162,10 +162,17 @@ public class BookmarkQueryService {
         String endCursor = edges.isEmpty() ? null : edges.get(edges.size() - 1).getCursor();
         PageInfo pageInfo = new PageInfo(hasNextPage, after != null, startCursor, endCursor);
 
-        // Get total count (for UI to show total items)
-        int totalCount = (int) bookmarkRepository.count();
+        // totalCount is null by default - computed lazily if requested by client
+        // This avoids expensive count() query on every pagination request
+        return new BookmarkConnection(edges, pageInfo, null);
+    }
 
-        return new BookmarkConnection(edges, pageInfo, totalCount);
+    /**
+     * Get total count of bookmarks
+     * Separate method for lazy computation
+     */
+    public int getTotalCount() {
+        return (int) bookmarkRepository.count();
     }
 
     /**

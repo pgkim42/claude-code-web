@@ -61,8 +61,6 @@ public class BookmarkSubscriptionResolver {
     public Flux<Long> bookmarkDeleted() {
         log.info("Client subscribed to bookmarkDeleted");
         return eventPublisher.getEventsByType(BookmarkEvent.EventType.DELETED)
-                .map(event -> event.getBookmarkId() != null ?
-                     event.getBookmarkId() :
-                     event.getBookmark().getId());
+                .map(BookmarkEvent::getBookmarkId);
     }
 }
